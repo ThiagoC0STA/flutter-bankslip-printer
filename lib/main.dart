@@ -1,9 +1,12 @@
-import 'dart:typed_data';
+// ignore_for_file: deprecated_member_use, library_private_types_in_public_api
 
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:flutter_printer/components/imageGenerator/ImageGenerator.dart';
 import 'package:image/image.dart' as img;
 
 void main() => runApp(const MyApp());
@@ -30,6 +33,8 @@ class BluetoothPrinterScreen extends StatefulWidget {
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   List<ScanResult> scanResults = [];
   BluetoothDevice? selectedPrinter;
+  GlobalKey repaintBoundaryKey = GlobalKey();
+  
 
   @override
   Widget build(BuildContext context) {
@@ -37,32 +42,41 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
       appBar: AppBar(title: const Text('Find Bluetooth Printers')),
       body: Column(
         children: [
-          ElevatedButton(
-            onPressed: startScan,
-            child: const Text('Search Printers'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: startScan,
+                child: const Text('Search Printers'),
+              ),
+              ElevatedButton(
+                onPressed: selectedPrinter != null
+                    ? () => printTestTicket(selectedPrinter!)
+                    : null,
+                child: const Text('Print Test Ticket'),
+              ),
+            ],
           ),
           Expanded(
             child: ListView.builder(
               itemCount: scanResults.length,
               itemBuilder: (context, index) {
                 var device = scanResults[index].device;
-                if (device.name != null && device.name!.isNotEmpty) {
-                  // Filtrar dispositivos sem nome
-                  return ListTile(
-                    title: Text(device.name!),
-                    onTap: () => selectPrinter(device),
-                  );
-                } else {
-                  return Container(); // Ou um widget que indica dispositivo sem nome
-                }
+                return device.name.isNotEmpty
+                    ? ListTile(
+                        title: Text(device.name),
+                        onTap: () => selectPrinter(device),
+                      )
+                    : Container();
               },
             ),
           ),
-          ElevatedButton(
-            onPressed: selectedPrinter != null
-                ? () => printTestTicket(selectedPrinter!)
-                : null,
-            child: const Text('Print Test Ticket'),
+          RepaintBoundary(
+            key: repaintBoundaryKey,
+            child: CustomPaint(
+              size: const Size(200, 100),
+              painter: BankSlipPainter(),
+            ),
           ),
         ],
       ),
@@ -88,47 +102,57 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     });
   }
 
-Future<void> printTestTicket(BluetoothDevice printer) async {
-  final profile = await CapabilityProfile.load();
-  final generator = Generator(PaperSize.mm80, profile);
+  Future<void> printTestTicket(BluetoothDevice printer) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
 
-  Uint8List imageBytes = await loadImage('assets/receipt2.jpg');
-  img.Image image = img.decodeImage(imageBytes)!;
-  List<int> bytes = generator.image(image);
+    // Geração da imagem
+    final img.Image image = await createImageFromCustomPaint();
+    List<int> bytes = generator.image(image);
 
-  try {
-    await printer.connect();
-    List<BluetoothService> services = await printer.discoverServices();
-    for (BluetoothService service in services) {
-      for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if (characteristic.properties.write) {
-          for (int i = 0; i < bytes.length; i += 500) {
-            int end = (i + 500 > bytes.length) ? bytes.length : i + 500;
-            await characteristic.write(bytes.sublist(i, end), allowLongWrite: true);
+    try {
+      await printer.connect();
+      print('Printer connected');
+
+      List<BluetoothService> services = await printer.discoverServices();
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic
+            in service.characteristics) {
+          if (characteristic.properties.write) {
+            print('Sending data to printer');
+            const int maxChunkSize = 182;
+            for (int i = 0; i < bytes.length; i += maxChunkSize) {
+              int end = (i + maxChunkSize > bytes.length)
+                  ? bytes.length
+                  : i + maxChunkSize;
+              await characteristic.write(bytes.sublist(i, end),
+                  withoutResponse: true);
+            }
+            print('Data sent');
+            break;
           }
-          break;
         }
       }
+    } catch (e) {
+      print('Error printing: $e');
+    } finally {
+      await printer.disconnect();
+      print('Printer disconnected');
     }
-  } catch (e) {
-    print('Error printing: $e');
-  } finally {
-    await printer.disconnect();
   }
-}
 
-  Future<Uint8List> loadImage(String path) async {
-    final ByteData data = await rootBundle.load(path);
-    Uint8List bytes = data.buffer.asUint8List();
+  Future<img.Image> createImageFromCustomPaint() async {
+    RenderRepaintBoundary boundary = repaintBoundaryKey.currentContext!
+        .findRenderObject() as RenderRepaintBoundary;
+    ui.Image uiImage = await boundary.toImage(pixelRatio: 3.0);
+    final ByteData? byteData =
+        await uiImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List pngBytes = byteData!.buffer.asUint8List();
+    img.Image originalImage = img.decodeImage(pngBytes)!;
+    img.Image bwImage = img.grayscale(originalImage);
+    img.Image resizedImage = img.copyResize(bwImage,
+        width: 383);
 
-    img.Image originalImage = img.decodeImage(bytes)!;
-    int printerWidth = 384;
-
-    // Redimensionar e converter para escala de cinza (se necessário)
-    img.Image resizedImage = img.copyResize(originalImage, width: printerWidth);
-    img.Image grayscaleImage =
-        img.grayscale(resizedImage); // Converter para escala de cinza
-
-    return Uint8List.fromList(img.encodePng(grayscaleImage));
+    return resizedImage;
   }
 }
