@@ -1,9 +1,8 @@
-// ignore_for_file: library_private_types_in_public_api
-
-import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:image/image.dart' as img;
 
 void main() => runApp(const MyApp());
 
@@ -27,7 +26,6 @@ class BluetoothPrinterScreen extends StatefulWidget {
 }
 
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
   List<ScanResult> scanResults = [];
   BluetoothDevice? selectedPrinter;
 
@@ -47,7 +45,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               itemBuilder: (context, index) {
                 var device = scanResults[index].device;
                 return ListTile(
-                  title: Text(device.name),
+                  title: Text(device.name ?? 'Unknown device'),
                   onTap: () => selectPrinter(device),
                 );
               },
@@ -64,13 +62,18 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     );
   }
 
-  void startScan() {
-    flutterBlue.startScan(timeout: const Duration(seconds: 4));
-    flutterBlue.scanResults.listen((results) {
+  void startScan() async {
+    FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+    var subscription = FlutterBluePlus.scanResults.listen((results) {
       setState(() {
         scanResults = results;
       });
     });
+
+    // Para o scan após um tempo ou baseado em alguma condição
+    await Future.delayed(const Duration(seconds: 4));
+    await FlutterBluePlus.stopScan();
+    await subscription.cancel();
   }
 
   void selectPrinter(BluetoothDevice device) {
@@ -83,67 +86,18 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
 
-    // Gerar um ticket simples
-    List<int> bytes = [];
-    bytes += generator.text('TESTE STRING');
-
-    final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
-    generator.barcode(Barcode.upcA(barData));
-
-    bytes += generator.text(
-        'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
-
-    bytes += generator.text('Bold text', styles: const PosStyles(bold: true));
-    bytes +=
-        generator.text('Reverse text', styles: const PosStyles(reverse: true));
-    bytes += generator.text('Underlined text',
-        styles: const PosStyles(underline: true), linesAfter: 1);
-    bytes += generator.text('Align left',
-        styles: const PosStyles(align: PosAlign.left));
-    bytes += generator.text('Align center',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('Align right',
-        styles: const PosStyles(align: PosAlign.right), linesAfter: 1);
-
-    bytes += generator.text('Text size 200%',
-        styles: const PosStyles(
-          height: PosTextSize.size2,
-          width: PosTextSize.size2,
-        ));
-
-    generator.row([
-      PosColumn(
-        text: 'col3',
-        width: 3,
-        styles: const PosStyles(align: PosAlign.center, underline: true),
-      ),
-      PosColumn(
-        text: 'col6',
-        width: 6,
-        styles: const PosStyles(align: PosAlign.center, underline: true),
-      ),
-      PosColumn(
-        text: 'col3',
-        width: 3,
-        styles: const PosStyles(align: PosAlign.center, underline: true),
-      ),
-    ]);
-
-    bytes += generator.feed(2);
-    bytes += generator.cut();
+    Uint8List imageBytes = await loadImage('assets/receipt2.jpg');
+    img.Image image = img.decodeImage(imageBytes)!;
+    List<int> bytes = generator.image(image);
 
     try {
-      // Conectar à impressora
       await printer.connect();
-
-      // Obter o serviço que corresponde à impressão
-      final List<BluetoothService> services = await printer.discoverServices();
-      for (final BluetoothService service in services) {
-        for (final BluetoothCharacteristic characteristic
+      List<BluetoothService> services = await printer.discoverServices();
+      for (BluetoothService service in services) {
+        for (BluetoothCharacteristic characteristic
             in service.characteristics) {
           if (characteristic.properties.write) {
-            // Enviar os dados do ticket
-            await characteristic.write(bytes);
+            await characteristic.write(bytes, withoutResponse: true);
             break;
           }
         }
@@ -151,8 +105,13 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     } catch (e) {
       print('Erro ao imprimir: $e');
     } finally {
-      // Desconectar da impressora
-      printer.disconnect();
+      await printer.disconnect();
     }
+  }
+
+  Future<Uint8List> loadImage(String path) async {
+    final ByteData data = await rootBundle.load(path);
+    Uint8List bytes = data.buffer.asUint8List();
+    return bytes;
   }
 }
