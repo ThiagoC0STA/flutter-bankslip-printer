@@ -1,10 +1,9 @@
 // ignore_for_file: library_private_types_in_public_api
 
-import 'package:flutter/foundation.dart';
+import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
+import 'package:esc_pos_utils/esc_pos_utils.dart';
 
 void main() => runApp(const MyApp());
 
@@ -30,6 +29,7 @@ class BluetoothPrinterScreen extends StatefulWidget {
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   FlutterBlue flutterBlue = FlutterBlue.instance;
   List<ScanResult> scanResults = [];
+  BluetoothDevice? selectedPrinter;
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +45,19 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
             child: ListView.builder(
               itemCount: scanResults.length,
               itemBuilder: (context, index) {
+                var device = scanResults[index].device;
                 return ListTile(
-                  title: Text(scanResults[index].device.name),
-                  onTap: () => connectAndPrint(scanResults[index].device),
+                  title: Text(device.name),
+                  onTap: () => selectPrinter(device),
                 );
               },
             ),
+          ),
+          ElevatedButton(
+            onPressed: selectedPrinter != null
+                ? () => printTestTicket(selectedPrinter!)
+                : null,
+            child: const Text('Print Test Ticket'),
           ),
         ],
       ),
@@ -64,49 +71,88 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
         scanResults = results;
       });
     });
-    flutterBlue.stopScan();
   }
 
-  void connectAndPrint(BluetoothDevice device) async {
+  void selectPrinter(BluetoothDevice device) {
+    setState(() {
+      selectedPrinter = device;
+    });
+  }
+
+  Future<void> printTestTicket(BluetoothDevice printer) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+
+    // Gerar um ticket simples
+    List<int> bytes = [];
+    bytes += generator.text('TESTE STRING');
+
+    final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
+    generator.barcode(Barcode.upcA(barData));
+
+    bytes += generator.text(
+        'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
+
+    bytes += generator.text('Bold text', styles: const PosStyles(bold: true));
+    bytes +=
+        generator.text('Reverse text', styles: const PosStyles(reverse: true));
+    bytes += generator.text('Underlined text',
+        styles: const PosStyles(underline: true), linesAfter: 1);
+    bytes += generator.text('Align left',
+        styles: const PosStyles(align: PosAlign.left));
+    bytes += generator.text('Align center',
+        styles: const PosStyles(align: PosAlign.center));
+    bytes += generator.text('Align right',
+        styles: const PosStyles(align: PosAlign.right), linesAfter: 1);
+
+    bytes += generator.text('Text size 200%',
+        styles: const PosStyles(
+          height: PosTextSize.size2,
+          width: PosTextSize.size2,
+        ));
+
+    generator.row([
+      PosColumn(
+        text: 'col3',
+        width: 3,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+      PosColumn(
+        text: 'col6',
+        width: 6,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+      PosColumn(
+        text: 'col3',
+        width: 3,
+        styles: const PosStyles(align: PosAlign.center, underline: true),
+      ),
+    ]);
+
+    bytes += generator.feed(2);
+    bytes += generator.cut();
+
     try {
-      await device.connect();
-      List<BluetoothService> services = await device.discoverServices();
-      BluetoothCharacteristic? targetCharacteristic;
-      for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic
+      // Conectar à impressora
+      await printer.connect();
+
+      // Obter o serviço que corresponde à impressão
+      final List<BluetoothService> services = await printer.discoverServices();
+      for (final BluetoothService service in services) {
+        for (final BluetoothCharacteristic characteristic
             in service.characteristics) {
           if (characteristic.properties.write) {
-            targetCharacteristic = characteristic;
+            // Enviar os dados do ticket
+            await characteristic.write(bytes);
             break;
           }
         }
-        if (targetCharacteristic != null) break;
       }
-      if (targetCharacteristic != null) {
-        Uint8List pdfBytes = await generateBoletoAndReciboBytes();
-        await targetCharacteristic.write(pdfBytes);
-      }
-      await device.disconnect();
     } catch (e) {
-      if (kDebugMode) {
-        print('Error connecting or printing: $e');
-      }
+      print('Erro ao imprimir: $e');
+    } finally {
+      // Desconectar da impressora
+      printer.disconnect();
     }
-  }
-
-  Future<Uint8List> generateBoletoAndReciboBytes() async {
-    final doc = pw.Document();
-    doc.addPage(pw.Page(
-      pageFormat: PdfPageFormat.roll80,
-      build: (pw.Context context) {
-        return pw.Column(
-          children: [
-            pw.Text('Boleto Bancário', style: const pw.TextStyle(fontSize: 20)),
-            // ...
-          ],
-        );
-      },
-    ));
-    return doc.save();
   }
 }
