@@ -46,10 +46,15 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               itemCount: scanResults.length,
               itemBuilder: (context, index) {
                 var device = scanResults[index].device;
-                return ListTile(
-                  title: Text(device.name ?? 'Unknown device'),
-                  onTap: () => selectPrinter(device),
-                );
+                if (device.name != null && device.name!.isNotEmpty) {
+                  // Filtrar dispositivos sem nome
+                  return ListTile(
+                    title: Text(device.name!),
+                    onTap: () => selectPrinter(device),
+                  );
+                } else {
+                  return Container(); // Ou um widget que indica dispositivo sem nome
+                }
               },
             ),
           ),
@@ -83,45 +88,47 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     });
   }
 
-  Future<void> printTestTicket(BluetoothDevice printer) async {
-    final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm80, profile);
+Future<void> printTestTicket(BluetoothDevice printer) async {
+  final profile = await CapabilityProfile.load();
+  final generator = Generator(PaperSize.mm80, profile);
 
-    Uint8List imageBytes = await loadImage('assets/receipt2.jpg');
-    img.Image image = img.decodeImage(imageBytes)!;
-    List<int> bytes = generator.image(image);
+  Uint8List imageBytes = await loadImage('assets/receipt2.jpg');
+  img.Image image = img.decodeImage(imageBytes)!;
+  List<int> bytes = generator.image(image);
 
-    try {
-      await printer.connect();
-      List<BluetoothService> services = await printer.discoverServices();
-      for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic
-            in service.characteristics) {
-          if (characteristic.properties.write) {
-            await characteristic.write(bytes, withoutResponse: true);
-            break;
+  try {
+    await printer.connect();
+    List<BluetoothService> services = await printer.discoverServices();
+    for (BluetoothService service in services) {
+      for (BluetoothCharacteristic characteristic in service.characteristics) {
+        if (characteristic.properties.write) {
+          for (int i = 0; i < bytes.length; i += 500) {
+            int end = (i + 500 > bytes.length) ? bytes.length : i + 500;
+            await characteristic.write(bytes.sublist(i, end), allowLongWrite: true);
           }
+          break;
         }
       }
-    } catch (e) {
-      print('Error printing: $e');
-    } finally {
-      await printer.disconnect();
     }
+  } catch (e) {
+    print('Error printing: $e');
+  } finally {
+    await printer.disconnect();
   }
+}
 
   Future<Uint8List> loadImage(String path) async {
     final ByteData data = await rootBundle.load(path);
     Uint8List bytes = data.buffer.asUint8List();
 
-    // Decodificar a imagem
     img.Image originalImage = img.decodeImage(bytes)!;
+    int printerWidth = 384;
 
-    // Redimensionar a imagem para a largura da impressora (mantendo a proporção)
-    int printerWidth = 20; // Ajuste este valor para a largura da sua impressora
+    // Redimensionar e converter para escala de cinza (se necessário)
     img.Image resizedImage = img.copyResize(originalImage, width: printerWidth);
+    img.Image grayscaleImage =
+        img.grayscale(resizedImage); // Converter para escala de cinza
 
-    // Converter a imagem redimensionada de volta para Uint8List
-    return Uint8List.fromList(img.encodePng(resizedImage));
+    return Uint8List.fromList(img.encodePng(grayscaleImage));
   }
 }
