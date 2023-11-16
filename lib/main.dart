@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -7,7 +9,7 @@ import 'package:image/image.dart' as img;
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
 }
 
 class BluetoothPrinterScreen extends StatefulWidget {
-  const BluetoothPrinterScreen({super.key});
+  const BluetoothPrinterScreen({Key? key}) : super(key: key);
 
   @override
   _BluetoothPrinterScreenState createState() => _BluetoothPrinterScreenState();
@@ -36,8 +38,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
       body: Column(
         children: [
           ElevatedButton(
+            onPressed: startScan,
             child: const Text('Search Printers'),
-            onPressed: () => startScan(),
           ),
           Expanded(
             child: ListView.builder(
@@ -70,7 +72,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
       });
     });
 
-    // Para o scan após um tempo ou baseado em alguma condição
     await Future.delayed(const Duration(seconds: 4));
     await FlutterBluePlus.stopScan();
     await subscription.cancel();
@@ -103,7 +104,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
         }
       }
     } catch (e) {
-      print('Erro ao imprimir: $e');
+      print('Error printing: $e');
     } finally {
       await printer.disconnect();
     }
@@ -112,6 +113,15 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   Future<Uint8List> loadImage(String path) async {
     final ByteData data = await rootBundle.load(path);
     Uint8List bytes = data.buffer.asUint8List();
-    return bytes;
+
+    // Decodificar a imagem
+    img.Image originalImage = img.decodeImage(bytes)!;
+
+    // Redimensionar a imagem para a largura da impressora (mantendo a proporção)
+    int printerWidth = 20; // Ajuste este valor para a largura da sua impressora
+    img.Image resizedImage = img.copyResize(originalImage, width: printerWidth);
+
+    // Converter a imagem redimensionada de volta para Uint8List
+    return Uint8List.fromList(img.encodePng(resizedImage));
   }
 }
