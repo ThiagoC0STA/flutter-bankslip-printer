@@ -73,7 +73,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           RepaintBoundary(
             key: repaintBoundaryKey,
             child: CustomPaint(
-              size: const Size(400, 200 + 70),
+              size: const Size(540, 500 + 70),
               painter: BankSlipPainter(),
             )
           ),
@@ -148,7 +148,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   Future<img.Image> createImageFromCustomPaint() async {
     RenderRepaintBoundary boundary = repaintBoundaryKey.currentContext!
         .findRenderObject() as RenderRepaintBoundary;
-    ui.Image uiImage = await boundary.toImage(pixelRatio: 4.0);
+    ui.Image uiImage = await boundary.toImage(pixelRatio: 3.0);
     final ByteData? byteData =
         await uiImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
