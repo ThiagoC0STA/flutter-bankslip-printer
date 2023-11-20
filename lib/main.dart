@@ -1,6 +1,5 @@
 // ignore_for_file: deprecated_member_use, library_private_types_in_public_api
 
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -74,9 +73,9 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           RepaintBoundary(
             key: repaintBoundaryKey,
             child: CustomPaint(
-              size: const Size(558, 200),
+              size: const Size(400, 200 + 70),
               painter: BankSlipPainter(),
-            ),
+            )
           ),
         ],
       ),
@@ -121,20 +120,13 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           for (BluetoothCharacteristic characteristic
               in service.characteristics) {
             if (characteristic.properties.write) {
-              if (kDebugMode) {
-                print('Enviando dados para o serviço: ${service.uuid}');
-              }
-              const int maxChunkSize = 500; //182 //382 //
+              const int maxChunkSize = 172; //182 //382 //
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
                     ? bytes.length
                     : i + maxChunkSize;
                 await characteristic.write(bytes.sublist(i, end),
                     withoutResponse: true);
-              }
-
-              if (kDebugMode) {
-                print('Dados enviados');
               }
               break;
             }
@@ -156,7 +148,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   Future<img.Image> createImageFromCustomPaint() async {
     RenderRepaintBoundary boundary = repaintBoundaryKey.currentContext!
         .findRenderObject() as RenderRepaintBoundary;
-    ui.Image uiImage = await boundary.toImage(pixelRatio: 3.0);
+    ui.Image uiImage = await boundary.toImage(pixelRatio: 4.0);
     final ByteData? byteData =
         await uiImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
