@@ -2,6 +2,7 @@
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -34,7 +35,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   List<ScanResult> scanResults = [];
   BluetoothDevice? selectedPrinter;
   GlobalKey repaintBoundaryKey = GlobalKey();
-  
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +74,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           RepaintBoundary(
             key: repaintBoundaryKey,
             child: CustomPaint(
-              size: const Size(200, 100),
+              size: const Size(200, 200),
               painter: BankSlipPainter(),
             ),
           ),
@@ -111,33 +111,45 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     List<int> bytes = generator.image(image);
 
     try {
-      await printer.connect();
-      print('Printer connected');
+      if (!printer.isConnected) {
+        await printer.connect();
+      }
 
       List<BluetoothService> services = await printer.discoverServices();
       for (BluetoothService service in services) {
-        for (BluetoothCharacteristic characteristic
-            in service.characteristics) {
-          if (characteristic.properties.write) {
-            print('Sending data to printer');
-            const int maxChunkSize = 182;
-            for (int i = 0; i < bytes.length; i += maxChunkSize) {
-              int end = (i + maxChunkSize > bytes.length)
-                  ? bytes.length
-                  : i + maxChunkSize;
-              await characteristic.write(bytes.sublist(i, end),
-                  withoutResponse: true);
+        if (service.uuid.toString() == "49535343-fe7d-4ae5-8fa9-9fafd205e455") {
+          for (BluetoothCharacteristic characteristic
+              in service.characteristics) {
+            if (characteristic.properties.write) {
+              if (kDebugMode) {
+                print('Enviando dados para o serviço: ${service.uuid}');
+              }
+              const int maxChunkSize = 182;
+              for (int i = 0; i < bytes.length; i += maxChunkSize) {
+                int end = (i + maxChunkSize > bytes.length)
+                    ? bytes.length
+                    : i + maxChunkSize;
+                await characteristic.write(bytes.sublist(i, end),
+                    withoutResponse: true);
+              }
+
+              if (kDebugMode) {
+                print('Dados enviados');
+              }
+              break;
             }
-            print('Data sent');
-            break;
           }
         }
       }
     } catch (e) {
-      print('Error printing: $e');
+      if (kDebugMode) {
+        print('Error printing: $e');
+      }
     } finally {
       await printer.disconnect();
-      print('Printer disconnected');
+      if (kDebugMode) {
+        print('Printer disconnected');
+      }
     }
   }
 
@@ -150,8 +162,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
     img.Image originalImage = img.decodeImage(pngBytes)!;
     img.Image bwImage = img.grayscale(originalImage);
-    img.Image resizedImage = img.copyResize(bwImage,
-        width: 383);
+    img.Image resizedImage = img.copyResize(bwImage, width: 383);
 
     return resizedImage;
   }
