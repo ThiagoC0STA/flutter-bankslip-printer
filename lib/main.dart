@@ -74,7 +74,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           RepaintBoundary(
             key: repaintBoundaryKey,
             child: CustomPaint(
-              size: const Size(200, 200),
+              size: const Size(558, 200),
               painter: BankSlipPainter(),
             ),
           ),
@@ -124,7 +124,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               if (kDebugMode) {
                 print('Enviando dados para o serviço: ${service.uuid}');
               }
-              const int maxChunkSize = 182;
+              const int maxChunkSize = 500; //182 //382 //
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
                     ? bytes.length
@@ -162,7 +162,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final Uint8List pngBytes = byteData!.buffer.asUint8List();
     img.Image originalImage = img.decodeImage(pngBytes)!;
     img.Image bwImage = img.grayscale(originalImage);
-    img.Image resizedImage = img.copyResize(bwImage, width: 383);
+    img.Image resizedImage = img.copyResize(bwImage, width: 558);
 
     return resizedImage;
   }

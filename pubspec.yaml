@@ -28,3 +28,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/receipt2.jpg
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/Roboto-Regular.ttf
