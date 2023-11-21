@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_printer/components/imageGenerator/ImageGenerator.dart';
@@ -33,7 +34,26 @@ class BluetoothPrinterScreen extends StatefulWidget {
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   List<ScanResult> scanResults = [];
   BluetoothDevice? selectedPrinter;
+  ui.Image? image;
   GlobalKey repaintBoundaryKey = GlobalKey();
+
+  @override
+  void initState() {
+    createImageFromCustomPaint();
+    super.initState();
+    _loadImage();
+  }
+
+  Future<void> _loadImage() async {
+    print("Loading image...");
+    final ByteData data = await rootBundle.load('assets/caixalogo.png');
+    final Uint8List bytes = data.buffer.asUint8List();
+    final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    final ui.FrameInfo fi = await codec.getNextFrame();
+    setState(() {
+      image = fi.image;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,12 +90,15 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               },
             ),
           ),
-          RepaintBoundary(
-            key: repaintBoundaryKey,
-            child: CustomPaint(
-              size: const Size(540, 500 + 70),
-              painter: BankSlipPainter(),
-            )
+          Offstage(
+            offstage: true,
+            child: RepaintBoundary(
+              key: repaintBoundaryKey,
+              child: CustomPaint(
+                size: const Size(540, 1600),
+                painter: BankSlipPainter(image),
+              ),
+            ),
           ),
         ],
       ),
@@ -83,6 +106,9 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   void startScan() async {
+    var pairedDevices = await FlutterBluePlus.systemDevices;;
+
+    print(pairedDevices);
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
     var subscription = FlutterBluePlus.scanResults.listen((results) {
       setState(() {
@@ -120,13 +146,15 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
           for (BluetoothCharacteristic characteristic
               in service.characteristics) {
             if (characteristic.properties.write) {
-              const int maxChunkSize = 172; //182 //382 //
+              const int maxChunkSize = 505; // Ajuste conforme necessário
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
                     ? bytes.length
                     : i + maxChunkSize;
                 await characteristic.write(bytes.sublist(i, end),
-                    withoutResponse: true);
+                    withoutResponse: false);
+                await Future.delayed(
+                    const Duration(milliseconds: 10)); // Atraso entre os chunks
               }
               break;
             }
@@ -138,6 +166,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
         print('Error printing: $e');
       }
     } finally {
+      await Future.delayed(const Duration(milliseconds: 10));
       await printer.disconnect();
       if (kDebugMode) {
         print('Printer disconnected');
