@@ -39,7 +39,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
   @override
   void initState() {
-    createImageFromCustomPaint();
     super.initState();
     _loadImage();
   }
@@ -91,24 +90,21 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
             ),
           ),
           Offstage(
-            offstage: true,
+            offstage: true, // Isso torna o widget "invisível"
             child: RepaintBoundary(
               key: repaintBoundaryKey,
               child: CustomPaint(
-                size: const Size(540, 1600),
+                size: const Size(540, 1500),
                 painter: BankSlipPainter(image),
               ),
             ),
-          ),
+          )
         ],
       ),
     );
   }
 
   void startScan() async {
-    var pairedDevices = await FlutterBluePlus.systemDevices;;
-
-    print(pairedDevices);
     FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
     var subscription = FlutterBluePlus.scanResults.listen((results) {
       setState(() {
