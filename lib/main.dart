@@ -235,8 +235,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   Future<img.Image> createImageForPrinting() async {
-    const double pixelRatio = 1.33; // Aumento da densidade de pixels 1.37
-    const int targetWidth = 650; // Largura padrão para impressoras de 80mm
+    const double pixelRatio = 1.3; // Aumento da densidade de pixels 1.37
+    const int targetWidth = 553; // Largura padrão para impressoras de 80mm
     const int targetHeight = 2000; // Altura desejada
 
     final recorder = ui.PictureRecorder();
@@ -258,8 +258,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
       throw Exception('Failed to convert image to PNG bytes.');
     }
     final pngBytes = byteData.buffer.asUint8List();
-   print("pngBytes ${pngBytes.length}");
-
     return img
         .decodeImage(pngBytes)!; // Decodificando os bytes PNG para uma imagem
   }
