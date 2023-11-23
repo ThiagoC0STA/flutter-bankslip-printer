@@ -4,18 +4,16 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_printer/components/imageGenerator/ImageGenerator.dart';
 import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +25,7 @@ class MyApp extends StatelessWidget {
 }
 
 class BluetoothPrinterScreen extends StatefulWidget {
-  const BluetoothPrinterScreen({Key? key}) : super(key: key);
+  const BluetoothPrinterScreen({super.key});
 
   @override
   _BluetoothPrinterScreenState createState() => _BluetoothPrinterScreenState();
@@ -36,7 +34,7 @@ class BluetoothPrinterScreen extends StatefulWidget {
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   List<dynamic> scanResultsPaired = [];
   List<ScanResult> scanResults = [];
-  dynamic? selectedPrinter;
+  dynamic selectedPrinter;
   ui.Image? image;
   GlobalKey repaintBoundaryKey = GlobalKey();
   bool isPairedDevice = false;
@@ -47,7 +45,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   @override
   void initState() {
     super.initState();
-    ;
     if (Platform.isAndroid) {
       startBluetoothDevices();
     }
@@ -113,16 +110,16 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
                   : Container();
             }).toList(),
           ),
-          // Offstage(
-          //   offstage: false, // Isso torna o widget "invisível"
-          //   child: RepaintBoundary(
-          //     key: repaintBoundaryKey,
-          //     child: CustomPaint(
-          //       size: const Size(540, 1500),
-          //       painter: BankSlipPainter(image),
-          //     ),
-          //   ),
-          // )
+          Offstage(
+            offstage: false, // Isso torna o widget "invisível"
+            child: RepaintBoundary(
+              key: repaintBoundaryKey,
+              child: CustomPaint(
+                size: const Size(540, 1500),
+                painter: BankSlipPainter(image),
+              ),
+            ),
+          )
         ],
       ),
     );
@@ -132,11 +129,10 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     try {
       var devices = await platform.invokeMethod('getBluetoothDevices');
 
-      print('devices $devices');
-
       setState(() {
         scanResultsPaired = devices;
       });
+    // ignore: unused_catch_clause, empty_catches
     } on PlatformException catch (e) {}
   }
 
@@ -154,7 +150,6 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   void selectPrinter(dynamic device) {
-    print('device selected ${device}');
     setState(() {
       selectedPrinter = device;
     });
@@ -204,7 +199,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               in service.characteristics) {
             if (characteristic.properties.write) {
               const int maxChunkSize = 505;
-              const int chunkDelayMs = 15;
+              const int chunkDelayMs = 20;
 
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
@@ -235,9 +230,14 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   Future<img.Image> createImageForPrinting() async {
-    const double pixelRatio = 1.3; // Aumento da densidade de pixels 1.37
-    const int targetWidth = 553; // Largura padrão para impressoras de 80mm
-    const int targetHeight = 2000; // Altura desejada
+    const double pixelRatio = 1.33; // Aumento da densidade de pixels 1.37
+    const int targetWidth = 560; // Largura padrão para impressoras de 80mm
+    const int targetHeight = 3050; // Altura desejada 3000
+
+    ByteData data = await rootBundle.load('assets/caixalogo.png');
+    Uint8List bytes = data.buffer.asUint8List();
+    ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    ui.FrameInfo fi = await codec.getNextFrame();
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder,
@@ -245,7 +245,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
     canvas.scale(pixelRatio, pixelRatio); // Aumentando a densidade de pixels
 
-    final bankSlipPainter = BankSlipPainter(null);
+    final bankSlipPainter = BankSlipPainter(fi.image);
     bankSlipPainter.paint(
         canvas, Size(targetWidth.toDouble(), targetHeight.toDouble()));
 

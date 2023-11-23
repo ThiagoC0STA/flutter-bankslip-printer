@@ -9,15 +9,16 @@ class BankSlipPainter extends CustomPainter {
   BankSlipPainter(this.image);
 
   void _drawText(Canvas canvas, String text, double x, double y,
-      [double textsize = 14]) {
+      [double textsize = 15]) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
         style: TextStyle(
           color: Colors.black,
           fontFamily: "Montserrat",
-          fontWeight: FontWeight.w700,
-          fontSize: textsize, // Usando a variável textsize aqui
+          fontWeight: textsize != 15 ? FontWeight.w600 : FontWeight.w700,
+          fontSize: textsize,
+          letterSpacing: -0.7,
         ),
       ),
       textAlign: TextAlign.left,
@@ -34,9 +35,8 @@ class BankSlipPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(-234, 620);
+    canvas.translate(0, 1850); // 1850
 
-    // Desenha as bordas do boleto
     Offset topLeft = Offset(offset.dx, offset.dy);
     Offset topRight = Offset(size.width + offset.dx, offset.dy);
     Offset bottomLeft = Offset(offset.dx, size.height + offset.dy);
@@ -85,7 +85,7 @@ class BankSlipPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(210, 800);
+    canvas.translate(210, 1250);
     canvas.rotate(1.5708);
 
     double halfWidth = 576;
@@ -116,14 +116,15 @@ class BankSlipPainter extends CustomPainter {
     }
 
     // --------------- LINHA HORIZONTAL ---------------
-    canvas.drawLine( 
+    canvas.drawLine(
       Offset(-halfWidth, -halfHeight + 45),
       Offset(halfWidth, -halfHeight + 45),
       linePaint,
     );
 
     _drawText(canvas, "LOCAL PAGAMENTO", -halfWidth + 15, -halfHeight + 50);
-    _drawText(canvas, "PAGÁVEL EM QUALQUER BANCO MESMO APÓS O VENCIMENTO", -halfWidth + 15, -halfHeight + 65);
+    _drawText(canvas, "PAGÁVEL EM QUALQUER BANCO MESMO APÓS O VENCIMENTO",
+        -halfWidth + 15, -halfHeight + 65);
 
     // --------------- LINHA HORIZONTAL ---------------
     canvas.drawLine(
@@ -133,7 +134,8 @@ class BankSlipPainter extends CustomPainter {
     );
 
     _drawText(canvas, "BENEFICIÁRIO", -halfWidth + 15, -halfHeight + 90);
-    _drawText(canvas, "SUA EMPRESA AQUI 99.999.999/9999-99", -halfWidth + 15, -halfHeight + 105);
+    _drawText(canvas, "SUA EMPRESA AQUI 99.999.999/9999-99", -halfWidth + 15,
+        -halfHeight + 105);
 
     // --------------- LINHA HORIZONTAL ---------------
     canvas.drawLine(
@@ -145,13 +147,13 @@ class BankSlipPainter extends CustomPainter {
     _drawText(canvas, "DATA DOCUMENTO", -halfWidth + 15, -halfHeight + 130);
     _drawText(canvas, "20/11/2023", -halfWidth + 15, -halfHeight + 145);
 
-        canvas.drawLine(
+    canvas.drawLine(
       Offset(-halfWidth + 170, -halfHeight + 125),
       Offset(-halfWidth + 170, -halfHeight + 165),
       linePaint,
     );
 
-    _drawText(canvas, "NUMERO DO DOCUMENTO", -halfWidth + 180, -halfHeight + 130);
+    _drawText(canvas, "NUMERO DOCUMENTO", -halfWidth + 180, -halfHeight + 130);
     _drawText(canvas, "1410000", -halfWidth + 180, -halfHeight + 145);
 
     canvas.drawLine(
@@ -172,15 +174,15 @@ class BankSlipPainter extends CustomPainter {
     _drawText(canvas, "ACEITE", -halfWidth + 560, -halfHeight + 130);
     _drawText(canvas, "N", -halfWidth + 560, -halfHeight + 145);
 
-        canvas.drawLine(
+    canvas.drawLine(
       Offset(-halfWidth + 650, -halfHeight + 125),
       Offset(-halfWidth + 650, -halfHeight + 165),
       linePaint,
     );
 
-    _drawText(canvas, "DATA PROCESSAMENTO", -halfWidth + 660, -halfHeight + 130);
+    _drawText(
+        canvas, "DATA PROCESSAMENTO", -halfWidth + 660, -halfHeight + 130);
     _drawText(canvas, "20/11/2023", -halfWidth + 660, -halfHeight + 145);
-
 
     // --------------- LINHA HORIZONTAL ---------------
     canvas.drawLine(
@@ -251,7 +253,7 @@ class BankSlipPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(210, 310);
+    canvas.translate(210, 350);
     canvas.rotate(1.5708);
 
     double halfWidth = 300;
@@ -294,8 +296,7 @@ class BankSlipPainter extends CustomPainter {
     _drawText(
         canvas, "14186426485300000-5", -halfWidth + 15, -halfHeight + 255);
 
-    _drawText(
-        canvas, "NÚMERO DO DOCUMENTO", halfWidth - 200, -halfHeight + 235);
+    _drawText(canvas, "NÚMERO DOCUMENTO", halfWidth - 200, -halfHeight + 235);
     _drawText(canvas, "1418000", halfWidth - 200, -halfHeight + 255);
 
     _drawText(canvas, "PAGADOR", -halfWidth + 15, -halfHeight + 285);
@@ -319,20 +320,19 @@ class BankSlipPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double contentHeightBankSlip = 600;
     double contentReceipt = 190;
-    double horizontalSpacing = 20.0; // Espaçamento horizontal entre os recibos
+    double horizontalSpacing = 20.0;
 
-    // _drawReceiptToSaler(
-    //     canvas,
-    //     Size(size.width / 2 - horizontalSpacing / 2, contentHeightBankSlip),
-    //     const Offset(0, 0));
+    _drawReceiptToSaler(
+        canvas,
+        Size(size.width / 2 - horizontalSpacing / 2, contentHeightBankSlip),
+        const Offset(0, 0));
 
     _drawBankSlip(
         canvas,
         Size(size.width / 2 - horizontalSpacing / 2, contentHeightBankSlip),
         const Offset(0, 0));
 
-    // _drawReceipt(canvas, Size(size.width + 12 - horizontalSpacing, 190),
-    //     Offset(size.width / 2 + horizontalSpacing, 0));
+    _drawReceipt(canvas, Size(size.width - 140, 190), const Offset(0, 0));
   }
 
   @override

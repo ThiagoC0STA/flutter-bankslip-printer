@@ -34,3 +34,12 @@ flutter:
     - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto/Roboto-bold.ttf
+        - asset: assets/fonts/Roboto/Roboto-black.ttf
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat/static/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat/static/Montserrat-bold.ttf
+        - asset: assets/fonts/Montserrat/static/Montserrat-black.ttf
+
+
