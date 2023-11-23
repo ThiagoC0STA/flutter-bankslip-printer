@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use, library_private_types_in_public_api
 
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -32,15 +33,23 @@ class BluetoothPrinterScreen extends StatefulWidget {
 }
 
 class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
+  List<dynamic> scanResultsPaired = [];
   List<ScanResult> scanResults = [];
-  BluetoothDevice? selectedPrinter;
+  dynamic? selectedPrinter;
   ui.Image? image;
   GlobalKey repaintBoundaryKey = GlobalKey();
+  bool isPairedDevice = false;
+
+  static const platform =
+      MethodChannel('com/example/flutter_printer/bluetooth');
 
   @override
   void initState() {
     super.initState();
     _loadImage();
+    if (Platform.isAndroid) {
+      startBluetoothDevices();
+    }
   }
 
   Future<void> _loadImage() async {
@@ -68,29 +77,46 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
                 child: const Text('Search Printers'),
               ),
               ElevatedButton(
-                onPressed: selectedPrinter != null
-                    ? () => printTestTicket(selectedPrinter!)
-                    : null,
+                onPressed: () => isPairedDevice
+                    ? printImageNativeAndroid(selectedPrinter!)
+                    : printImageFromFlutter(selectedPrinter!),
                 child: const Text('Print Test Ticket'),
               ),
             ],
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: scanResults.length,
-              itemBuilder: (context, index) {
-                var device = scanResults[index].device;
-                return device.name.isNotEmpty
-                    ? ListTile(
-                        title: Text(device.name),
-                        onTap: () => selectPrinter(device),
-                      )
-                    : Container();
-              },
-            ),
+          Column(
+            children: scanResultsPaired.map((device) {
+              return device['name'].isNotEmpty
+                  ? ListTile(
+                      title: Text(device['name']),
+                      onTap: () => {
+                        selectPrinter(device),
+                        setState(() {
+                          isPairedDevice = true;
+                        })
+                      },
+                    )
+                  : Container();
+            }).toList(),
+          ),
+          Column(
+            children: scanResults.map((element) {
+              var device = element.device;
+              return device.name.isNotEmpty
+                  ? ListTile(
+                      title: Text(device.name),
+                      onTap: () => {
+                        selectPrinter(device),
+                        setState(() {
+                          isPairedDevice = false;
+                        })
+                      },
+                    )
+                  : Container();
+            }).toList(),
           ),
           Offstage(
-            offstage: true, // Isso torna o widget "invisível"
+            offstage: false, // Isso torna o widget "invisível"
             child: RepaintBoundary(
               key: repaintBoundaryKey,
               child: CustomPaint(
@@ -102,6 +128,18 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
         ],
       ),
     );
+  }
+
+  void startBluetoothDevices() async {
+    try {
+      var devices = await platform.invokeMethod('getBluetoothDevices');
+
+      print('devices $devices');
+
+      setState(() {
+        scanResultsPaired = devices;
+      });
+    } on PlatformException catch (e) {}
   }
 
   void startScan() async {
@@ -117,13 +155,38 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     await subscription.cancel();
   }
 
-  void selectPrinter(BluetoothDevice device) {
+  void selectPrinter(dynamic device) {
+    print('device selected ${device}');
     setState(() {
       selectedPrinter = device;
     });
   }
 
-  Future<void> printTestTicket(BluetoothDevice printer) async {
+  Future<void> printImageNativeAndroid(dynamic printer) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm80, profile);
+
+    // Geração da imagem
+    final img.Image image = await createImageFromCustomPaint();
+    List<int> bytes = generator.image(image);
+
+    try {
+      if (!printer['isConnected']) {
+        await platform.invokeMethod('connectToDeviceByAddress',
+            {"address": printer['address'], "data": bytes});
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error printing: $e');
+      }
+    } finally {
+      if (kDebugMode) {
+        print('Printer disconnected');
+      }
+    }
+  }
+
+  Future<void> printImageFromFlutter(BluetoothDevice printer) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile);
 
