@@ -88,8 +88,9 @@ class BankSlipPainter extends CustomPainter {
     canvas.translate(210, 800);
     canvas.rotate(1.5708);
 
-    double halfWidth = 600;
+    double halfWidth = 576;
     double halfHeight = 210;
+
     canvas.drawLine(Offset(-halfWidth, -halfHeight),
         Offset(-halfWidth, halfHeight), linePaint);
     canvas.drawLine(Offset(-halfWidth, halfHeight),
@@ -241,48 +242,6 @@ class BankSlipPainter extends CustomPainter {
       Offset(halfWidth, -halfHeight + 205),
       linePaint,
     );
-
-    // _drawText(canvas, "PAGÁVEL EM QUALQUER BANCO MESMO APÓS O VENCIMENTO", -halfWidth + 15, -halfHeight + 105);
-
-    // canvas.drawLine(
-    //   Offset(-halfWidth, -halfHeight + 125),
-    //   Offset(halfWidth, -halfHeight + 125),
-    //   linePaint,
-    // );
-    // _drawText(
-    //     canvas, "RUA DOS SISTEMAS, 321", -halfWidth + 15, -halfHeight + 135);
-    // _drawText(canvas, "83000-000 VALE DO PINHAO - CURITIBA - PR",
-    //     -halfWidth + 15, -halfHeight + 155);
-
-    // _drawText(canvas, "AGÊNCIA / CÓDIGO BENEFICIÁRIO", -halfWidth + 15,
-    //     -halfHeight + 185);
-    // _drawText(canvas, "123654/9", -halfWidth + 15, -halfHeight + 205);
-
-    // _drawText(canvas, "DATA DOCUMENTO", halfWidth - 200, -halfHeight + 185);
-    // _drawText(canvas, "20/11/2023", halfWidth - 200, -halfHeight + 205);
-
-    // _drawText(canvas, "NOSSO NÚMERO", -halfWidth + 15, -halfHeight + 235);
-    // _drawText(
-    //     canvas, "14186426485300000-5", -halfWidth + 15, -halfHeight + 255);
-
-    // _drawText(
-    //     canvas, "NÚMERO DO DOCUMENTO", halfWidth - 200, -halfHeight + 235);
-    // _drawText(canvas, "1418000", halfWidth - 200, -halfHeight + 255);
-
-    // _drawText(canvas, "PAGADOR", -halfWidth + 15, -halfHeight + 285);
-    // _drawText(canvas, "SEU CLIENTE AQUI 99.999.999/9999-99", -halfWidth + 15,
-    //     -halfHeight + 305);
-    // _drawText(
-    //     canvas, "RUA DOS CLIENTES, 123", -halfWidth + 15, -halfHeight + 325);
-    // _drawText(canvas, "81000-321 CENTRO - CURITIBA - PR", -halfWidth + 15,
-    //     -halfHeight + 345);
-
-    // _drawText(canvas, "VALOR DOCUMENTO", -halfWidth + 15, -halfHeight + 375);
-    // _drawText(canvas, "199.90", -halfWidth + 15, -halfHeight + 395);
-
-    // _drawText(canvas, "VENCIMENTO", halfWidth - 200, -halfHeight + 375);
-    // _drawText(canvas, "20/10/2023", halfWidth - 200, -halfHeight + 395);
-
     canvas.restore();
   }
 
