@@ -19,6 +19,7 @@ dependencies:
   image: ^3.3.0
   flutter_blue_plus: ^1.28.14
   path_provider: ^2.1.1
+  barcode_image: ^2.0.2
 
 dev_dependencies:
   flutter_test:
@@ -41,5 +42,3 @@ flutter:
         - asset: assets/fonts/Montserrat/static/Montserrat-Regular.ttf
         - asset: assets/fonts/Montserrat/static/Montserrat-bold.ttf
         - asset: assets/fonts/Montserrat/static/Montserrat-black.ttf
-
-

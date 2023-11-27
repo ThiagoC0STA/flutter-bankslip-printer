@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:barcode_image/barcode_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +10,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_printer/components/imageGenerator/ImageGenerator.dart';
 import 'package:image/image.dart' as img;
-
+import 'package:barcode_image/barcode_image.dart' as bc;
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -110,16 +111,16 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
                   : Container();
             }).toList(),
           ),
-          Offstage(
-            offstage: false, // Isso torna o widget "invisível"
-            child: RepaintBoundary(
-              key: repaintBoundaryKey,
-              child: CustomPaint(
-                size: const Size(540, 1500),
-                painter: BankSlipPainter(image),
-              ),
-            ),
-          )
+          // Offstage(
+          //   offstage: false, // Isso torna o widget "invisível"
+          //   child: RepaintBoundary(
+          //     key: repaintBoundaryKey,
+          //     child: CustomPaint(
+          //       size: const Size(540, 1500),
+          //       painter: BankSlipPainter(image, null),
+          //     ),
+          //   ),
+          // )
         ],
       ),
     );
@@ -229,12 +230,28 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     }
   }
 
+    Future<ui.Image> generateBarcodeImage(String data) async {
+    final barcodeImage = img.Image(600, 120);
+
+    img.fill(barcodeImage, img.getColor(255, 255, 255));
+    drawBarcode(barcodeImage, bc.Barcode.itf(), data);
+    final png = img.encodePng(barcodeImage);
+
+    final uint8list = Uint8List.fromList(png);
+
+    ui.Codec codec = await ui.instantiateImageCodec(uint8list);
+    ui.FrameInfo frameInfo = await codec.getNextFrame();
+    return frameInfo.image;
+  }
+
   Future<img.Image> createImageForPrinting() async {
     const double pixelRatio = 1.33; // Aumento da densidade de pixels 1.37
     const int targetWidth = 560; // Largura padrão para impressoras de 80mm
-    const int targetHeight = 3050; // Altura desejada 3000
+    const int targetHeight = 3000; // Altura desejada 3000
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
+    final ui.Image barcodeImage = await generateBarcodeImage("12312312312311");
+
     Uint8List bytes = data.buffer.asUint8List();
     ui.Codec codec = await ui.instantiateImageCodec(bytes);
     ui.FrameInfo fi = await codec.getNextFrame();
@@ -245,13 +262,13 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
     canvas.scale(pixelRatio, pixelRatio); // Aumentando a densidade de pixels
 
-    final bankSlipPainter = BankSlipPainter(fi.image);
+    final bankSlipPainter = BankSlipPainter(fi.image, barcodeImage);
     bankSlipPainter.paint(
         canvas, Size(targetWidth.toDouble(), targetHeight.toDouble()));
 
     final picture = recorder.endRecording();
     final uiImage = await picture.toImage(
-        targetWidth, targetHeight); // Criando a imagem no tarmanho original
+        targetWidth, targetHeight); // Criando a imagem no tarmanho originalå
 
     final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {

@@ -1,12 +1,14 @@
 // ignore_for_file: file_names
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 class BankSlipPainter extends CustomPainter {
   final ui.Image? image;
+  final ui.Image? barcodeImage;
 
-  BankSlipPainter(this.image);
+  BankSlipPainter(this.image, this.barcodeImage);
 
   void _drawText(Canvas canvas, String text, double x, double y,
       [double textsize = 15]) {
@@ -35,7 +37,7 @@ class BankSlipPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(0, 1850); // 1850
+    canvas.translate(0, 1850);
 
     Offset topLeft = Offset(offset.dx, offset.dy);
     Offset topRight = Offset(size.width + offset.dx, offset.dy);
@@ -79,13 +81,13 @@ class BankSlipPainter extends CustomPainter {
         offset.dx + 15, offset.dy + 160);
   }
 
-  void _drawBankSlip(Canvas canvas, Size size, Offset offset) {
+  Future<void> _drawBankSlip(Canvas canvas, Size size, Offset offset) async {
     final linePaint = Paint()
       ..color = Colors.black
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(210, 1250);
+    canvas.translate(210, 1250); //1250
     canvas.rotate(1.5708);
 
     double halfWidth = 576;
@@ -103,9 +105,18 @@ class BankSlipPainter extends CustomPainter {
     _drawText(
         canvas,
         "|104-0| 10495.82693 69761.111249 29610.000084 7 80210000012957",
-        -halfWidth + 160,
+        -halfWidth + 160, 
         -halfHeight + 7,
         25);
+
+    if (barcodeImage != null) {
+      final barcodeImagePaint = Paint();
+      final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
+          barcodeImage!.height.toDouble());
+      final dst = Rect.fromLTWH(-halfWidth + 5, halfHeight - 105, 400,
+          100);
+      canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
+    }
 
     if (image != null) {
       final imagePaint = Paint();
@@ -319,7 +330,6 @@ class BankSlipPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     double contentHeightBankSlip = 600;
-    double contentReceipt = 190;
     double horizontalSpacing = 20.0;
 
     _drawReceiptToSaler(
