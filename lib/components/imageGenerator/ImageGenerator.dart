@@ -40,10 +40,10 @@ class BankSlipPainter extends CustomPainter {
     canvas.translate(0, 1850);
 
     Offset topLeft = Offset(offset.dx, offset.dy);
-    Offset topRight = Offset(size.width + offset.dx, offset.dy);
+    Offset topRight = Offset(size.width + offset.dx - 140, offset.dy);
     Offset bottomLeft = Offset(offset.dx, size.height + offset.dy);
     Offset bottomRight =
-        Offset(size.width + offset.dx, size.height + offset.dy);
+        Offset(size.width + offset.dx - 140, size.height + offset.dy);
 
     canvas.drawLine(topLeft, topRight, linePaint); // Linha superior
     canvas.drawLine(topRight, bottomRight, linePaint); // Linha direita
@@ -55,7 +55,7 @@ class BankSlipPainter extends CustomPainter {
 
     canvas.drawLine(
       Offset(offset.dx, offset.dy + 45),
-      Offset(offset.dx + size.width, offset.dy + 45),
+      Offset(offset.dx + size.width - 140, offset.dy + 45),
       linePaint,
     );
 
@@ -73,7 +73,7 @@ class BankSlipPainter extends CustomPainter {
 
     canvas.drawLine(
       Offset(offset.dx, offset.dy + 150),
-      Offset(offset.dx + size.width, offset.dy + 150),
+      Offset(offset.dx + size.width - 140, offset.dy + 150),
       linePaint,
     );
 
@@ -113,8 +113,8 @@ class BankSlipPainter extends CustomPainter {
       final barcodeImagePaint = Paint();
       final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
           barcodeImage!.height.toDouble());
-      final dst = Rect.fromLTWH(-halfWidth + 20, halfHeight - 115, 900,
-          100);
+      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 85, 700,
+          80);
       canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
     }
 
