@@ -200,7 +200,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               in service.characteristics) {
             if (characteristic.properties.write) {
               const int maxChunkSize = 505;
-              const int chunkDelayMs = 15;
+              const int chunkDelayMs = 17;
 
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
@@ -246,8 +246,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
   Future<img.Image> createImageForPrinting() async {
     const double pixelRatio = 1.3; // Aumento da densidade de pixels 1.37
-    const int targetWidth = 700; // Largura padrão para impressoras de 80mm
-    const int targetHeight = 3000; // Altura desejada 3000
+    const int targetWidth = 1000; // Largura padrão para impressoras de 80mm
+    const int targetHeight = 3000; //3000 boleto
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage("03397955400001035059023579026637184617780101");

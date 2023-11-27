@@ -18,7 +18,7 @@ class BankSlipPainter extends CustomPainter {
         style: TextStyle(
           color: Colors.black,
           fontFamily: "Montserrat",
-          fontWeight: textsize != 15 ? FontWeight.w600 : FontWeight.w700,
+          fontWeight: textsize != 15 && textsize != 14 ? FontWeight.w600 : FontWeight.w800,
           fontSize: textsize,
           letterSpacing: -0.7,
         ),
@@ -40,10 +40,10 @@ class BankSlipPainter extends CustomPainter {
     canvas.translate(0, 1850);
 
     Offset topLeft = Offset(offset.dx, offset.dy);
-    Offset topRight = Offset(size.width + offset.dx - 140, offset.dy);
+    Offset topRight = Offset(size.width + offset.dx - 440, offset.dy);
     Offset bottomLeft = Offset(offset.dx, size.height + offset.dy);
     Offset bottomRight =
-        Offset(size.width + offset.dx - 140, size.height + offset.dy);
+        Offset(size.width + offset.dx - 440, size.height + offset.dy);
 
     canvas.drawLine(topLeft, topRight, linePaint); // Linha superior
     canvas.drawLine(topRight, bottomRight, linePaint); // Linha direita
@@ -55,7 +55,7 @@ class BankSlipPainter extends CustomPainter {
 
     canvas.drawLine(
       Offset(offset.dx, offset.dy + 45),
-      Offset(offset.dx + size.width - 140, offset.dy + 45),
+      Offset(offset.dx + size.width - 440, offset.dy + 45),
       linePaint,
     );
 
@@ -63,7 +63,7 @@ class BankSlipPainter extends CustomPainter {
         offset.dx + 15, offset.dy + 60);
     _drawText(
         canvas,
-        "No valor de 199.99 com vencimento em 12/12/2024".toUpperCase(),
+        "No valor: 199.99 com vencimento: 12/12/2024".toUpperCase(),
         offset.dx + 15,
         offset.dy + 80);
     _drawText(canvas, "Nosso numero 3456343436436434364".toUpperCase(),
@@ -73,7 +73,7 @@ class BankSlipPainter extends CustomPainter {
 
     canvas.drawLine(
       Offset(offset.dx, offset.dy + 150),
-      Offset(offset.dx + size.width - 140, offset.dy + 150),
+      Offset(offset.dx + size.width - 440, offset.dy + 150),
       linePaint,
     );
 
@@ -87,7 +87,8 @@ class BankSlipPainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     canvas.save();
-    canvas.translate(210, 1250); //1250
+     //210 1250
+    canvas.translate(210, 1250);
     canvas.rotate(1.5708);
 
     double halfWidth = 576;
@@ -106,14 +107,14 @@ class BankSlipPainter extends CustomPainter {
         canvas,
         "|104-0| 10495.82693 69761.111249 29610.000084 7 80210000012957",
         -halfWidth + 160, 
-        -halfHeight + 7,
-        25);
+        -halfHeight + 5,
+        29);
 
     if (barcodeImage != null) {
       final barcodeImagePaint = Paint();
       final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
           barcodeImage!.height.toDouble());
-      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 85, 700,
+      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 88, 700,
           80);
       canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
     }
@@ -122,7 +123,7 @@ class BankSlipPainter extends CustomPainter {
       final imagePaint = Paint();
       final src = Rect.fromLTWH(
           0, 0, image!.width.toDouble(), image!.height.toDouble());
-      Rect dst = Rect.fromLTWH(-halfWidth + 15, -halfHeight + 8, 120, 30);
+      Rect dst = Rect.fromLTWH(-halfWidth + 17, -halfHeight + 8, 120, 30);
       canvas.drawImageRect(image!, src, dst, imagePaint);
     }
 
@@ -203,8 +204,7 @@ class BankSlipPainter extends CustomPainter {
     );
 
     _drawText(canvas, "USO DO BANCO", -halfWidth + 15, -halfHeight + 170);
-    // _drawText(canvas, "PAGÁVEL EM QUALQUER BANCO MESMO APÓS O VENCIMENTO", -halfWidth + 15, -halfHeight + 185);
-
+ 
     canvas.drawLine(
       Offset(-halfWidth + 145, -halfHeight + 165),
       Offset(-halfWidth + 145, -halfHeight + 205),
@@ -218,9 +218,6 @@ class BankSlipPainter extends CustomPainter {
       Offset(-halfWidth + 245, -halfHeight + 205),
       linePaint,
     );
-
-    _drawText(canvas, "CARTEIRA", -halfWidth + 255, -halfHeight + 168);
-    _drawText(canvas, "RG", -halfWidth + 255, -halfHeight + 185);
 
     canvas.drawLine(
       Offset(-halfWidth + 385, -halfHeight + 165),
@@ -249,12 +246,85 @@ class BankSlipPainter extends CustomPainter {
     _drawText(canvas, "VALOR", -halfWidth + 695, -halfHeight + 168);
     _drawText(canvas, "199.90", -halfWidth + 695, -halfHeight + 185);
 
+
+    _drawText(canvas, "INSTRUÇÕES:", -halfWidth + 15, -halfHeight + 210);
+    _drawText(canvas, "PEDIDO N: 12346 Valor do pedido: 199.90", -halfWidth + 15, -halfHeight + 225, 14);
+    _drawText(canvas, "Boleto 1/1 Condição de pagamento: 30 DIAS", -halfWidth + 15, -halfHeight + 240, 14);
+
+    _drawText(canvas, "PAGADOR:", -halfWidth + 15, -halfHeight + 290);
+    _drawText(canvas, "SEU CLIENTE AQUI: 00.000.000-99", -halfWidth + 110, -halfHeight + 290);
+    _drawText(canvas, "UA DOS CLIENTES 12381000-321 - CENTRO - CURITIBA - PR", -halfWidth + 110, -halfHeight + 305);
+
+
+    _drawText(canvas, "CARTEIRA", -halfWidth + 255, -halfHeight + 168);
+    _drawText(canvas, "RG", -halfWidth + 255, -halfHeight + 185);
+
     // --------------- LINHA HORIZONTAL ---------------
     canvas.drawLine(
       Offset(-halfWidth, -halfHeight + 205),
       Offset(halfWidth, -halfHeight + 205),
       linePaint,
     );
+
+   // --------------- LINHA VERTICAL ---------------
+    canvas.drawLine(
+      Offset(halfWidth - 300, -halfHeight + 45),
+      Offset(halfWidth - 300, halfHeight ), linePaint,
+    );
+
+    _drawText(canvas, "VENCIMENTO", halfWidth - 290, -halfHeight + 50);
+    _drawText(canvas, "27/12/2023", halfWidth - 290, -halfHeight + 65);
+
+    _drawText(canvas, "AGÊNCIA/CÓDIGO BENEFICIÁRIO", halfWidth - 290, -halfHeight + 90);
+    _drawText(canvas, "1236548/9", halfWidth - 290, -halfHeight + 105);
+
+    _drawText(canvas, "NOSSO NÚMERO", halfWidth - 290, -halfHeight + 130);
+    _drawText(canvas, "14186426485300000-5", halfWidth - 290, -halfHeight + 145);
+
+    _drawText(canvas, "(=) VALOR DOCUMENTO", halfWidth - 290, -halfHeight + 170);
+    _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 185);
+
+    _drawText(canvas, "(-) DESCONTO/ABATIMENTO", halfWidth - 290, -halfHeight + 210);
+    // _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 225);
+
+        canvas.drawLine(
+      Offset(275, -halfHeight + 245),
+      Offset(halfWidth, -halfHeight + 245),
+      linePaint,
+    );
+
+    _drawText(canvas, "(-) OUTRAS DEDUÇÕES", halfWidth - 290, -halfHeight + 250);
+    // _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 265);
+
+    canvas.drawLine(
+      Offset(-halfWidth, -halfHeight + 285),
+      Offset(halfWidth, -halfHeight + 285),
+      linePaint,
+    );
+
+    _drawText(canvas, "(+) MORA/MULTA", halfWidth - 290, -halfHeight + 290);
+    // _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 305);
+
+    canvas.drawLine(
+      Offset(-halfWidth, -halfHeight + 325),
+      Offset(halfWidth, -halfHeight + 325),
+      linePaint,
+    );
+
+
+    _drawText(canvas, "(+) OUTROS ACRÉSSIMOS", halfWidth - 290, -halfHeight + 330);
+    // _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 345);
+
+    canvas.drawLine(
+      Offset(275, -halfHeight + 365),
+      Offset(halfWidth, -halfHeight + 365),
+      linePaint,
+    );
+
+
+    _drawText(canvas, "(=) VALOR COBRADO", halfWidth - 290, -halfHeight + 370);
+    _drawText(canvas, "199.90", halfWidth - 290, -halfHeight + 385);
+
     canvas.restore();
   }
 
