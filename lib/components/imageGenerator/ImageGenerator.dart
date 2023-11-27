@@ -113,8 +113,8 @@ class BankSlipPainter extends CustomPainter {
       final barcodeImagePaint = Paint();
       final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
           barcodeImage!.height.toDouble());
-      final dst = Rect.fromLTWH(-halfWidth + 5, halfHeight - 105, 400,
-          100);
+      final dst = Rect.fromLTWH(-halfWidth + 20, halfHeight - 115, 600,
+          80);
       canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
     }
 
