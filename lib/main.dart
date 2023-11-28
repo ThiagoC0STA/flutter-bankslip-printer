@@ -247,7 +247,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   Future<img.Image> createImageForPrinting() async {
-    const double pixelRatio = 1.25;
+    const double pixelRatio = 1.35;
     const int targetWidth = 576;
     const int targetHeight = 3000;
 
