@@ -160,9 +160,9 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   Future<void> printImageNativeAndroid(dynamic printer) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile, spaceBetweenRows: 0);
-    
+
     // Geração da imagem
-    final img.Image image = await loadImageFromAssets('assets/caixalogo.png');
+    final img.Image image = await createImageForPrinting();
     List<int> bytes = generator.imageRaster(image);
 
     print("bytes $bytes");
@@ -247,9 +247,9 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   Future<img.Image> createImageForPrinting() async {
-    const double pixelRatio = 1.3; // Aumento da densidade de pixels 1.37
-    const int targetWidth = 576; // Largura padrão para impressoras de 80mm
-    const int targetHeight = 1500; // 3000 boleto
+    const double pixelRatio = 1.25;
+    const int targetWidth = 576;
+    const int targetHeight = 3000;
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage(
@@ -260,26 +260,31 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     ui.FrameInfo fi = await codec.getNextFrame();
 
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder,
+    final canvas = ui.Canvas(recorder,
         Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()));
 
-    canvas.scale(pixelRatio, pixelRatio); // Aumentando a densidade de pixels
+    canvas.scale(pixelRatio, pixelRatio);
 
     final bankSlipPainter = BankSlipPainter(fi.image, barcodeImage);
     bankSlipPainter.paint(
         canvas, Size(targetWidth.toDouble(), targetHeight.toDouble()));
 
     final picture = recorder.endRecording();
-    final uiImage = await picture.toImage(
-        targetWidth, targetHeight); // Criando a imagem no tarmanho originalå
+    final uiImage = await picture.toImage(targetWidth, targetHeight);
 
     final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
       throw Exception('Failed to convert image to PNG bytes.');
     }
     final pngBytes = byteData.buffer.asUint8List();
-    return img
-        .decodeImage(pngBytes)!; // Decodificando os bytes PNG para uma imagem
+
+    img.Image image = img.decodeImage(pngBytes)!;
+    img.Image resizedImg =
+        img.copyResize(image, width: targetWidth, height: targetHeight);
+
+    // Convert to JPEG
+    final jpgBytes = img.encodeJpg(resizedImg);
+    return img.decodeImage(jpgBytes)!;
   }
 
   Future<img.Image> loadImageFromAssets(String assetPath) async {

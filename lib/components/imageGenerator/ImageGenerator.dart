@@ -114,7 +114,7 @@ class BankSlipPainter extends CustomPainter {
       final barcodeImagePaint = Paint();
       final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
           barcodeImage!.height.toDouble());
-      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 88, 700,
+      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 88, 800,
           80);
       canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
     }
@@ -401,6 +401,10 @@ class BankSlipPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double contentHeightBankSlip = 600;
     double horizontalSpacing = 20.0;
+      Rect backgroundRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    Paint backgroundPaint = Paint()..color = Colors.white;
+
+    canvas.drawRect(backgroundRect, backgroundPaint);
 
     _drawReceiptToSaler(
         canvas,
