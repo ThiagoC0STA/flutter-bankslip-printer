@@ -160,163 +160,12 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   Future<void> printImageNativeAndroid(dynamic printer) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm80, profile, spaceBetweenRows: 0);
-
-    List<List<int>> testCommands = [
-      [0x1B, 0x40], // Inicializa a impressora
-      [0x1B, 0x33, 0x30], // Define espaçamento vertical mínimo
-      [0x1D, 0x21, 0x30], // Define espaçamento horizontal mínimo
-    ];
-
-    List<List<int>> resetCommands = [
-      [0x1B, 0x40], // Inicializa a impressora
-      [0x1B, 0x61, 0x00], // Alinha à esquerda
-      [0x1B, 0x21, 0x00], // Desativa negrito, itálico, sublinhado, etc.
-      [
-        0x1B,
-        0x21,
-        0x08
-      ], // Define a página de código para a página padrão (ISO 8859-1)
-      [0x1B, 0x33, 0x00], // Define espaçamento entre linhas mínimo
-      [0x1D, 0x57, 0x80],
-      [0x1D, 0x2A, 0x00],
-      [0x1D, 0x2F, 0x00],
-      [0x1D, 0x28, 0x41, 0x02, 0x00, 0x00, 0x31],
-    ];
-
-    List<List<int>> escPosCommands = [
-      // [0x09], // Tabulação horizontal
-      // [0x0A], // Imprimir e avançar linha
-      // [0x0D], // Imprimir e retornar carro
-      // [0x0C], // Imprimir rótulo de posição de término para iniciar a impressão
-      // [0x18, 0x03], // Cancelar dados de impressão em modo de página
-      // [0x10, 0x04], // Transmissão de status em tempo real
-      // [0x10, 0x05], // Solicitação em tempo real para a impressora
-      // [0x10, 0x14], // Gerar pulso em tempo real
-      // [0x1C, 0x0C], // Imprimir dados em modo de página
-      // [0x1B, 0x20, 0x01], // Definir espaçamento à direita do caractere
-      // [0x1B, 0x21, 0x08], // Definir modo de impressão
-      // [0x1B, 0x24, 0x00], // Definir posição de impressão absoluta
-      // [
-      //   0x1B,
-      //   0x25,
-      //   0x00
-      // ], // Selecionar/cancelar conjunto de caracteres definido pelo usuário
-      // [0x1B, 0x26], // Definir caracteres definidos pelo usuário
-      // [0x1B, 0x2A, 0x21, 0x11], // Definir modo de imagem de bits (1x1)
-      // [0x1B, 0x2D, 0x01], // Ativar modo de sublinhado
-      // [0x1B, 0x2D, 0x00], // Desativar modo de sublinhado
-      // [0x1B, 0x33, 0x00], // Definir espaçamento entre linhas mínimo
-      // [0x1D, 0x56, 0x00], // Corte completo
-      // [0x1B, 0x40], // Inicializar impressora
-      // [0x1B, 0x44, 0x08, 0x00], // Definir posições de tabulação horizontal
-      // [0x1B, 0x45, 0x01], // Selecionar modo enfatizado
-      // [0x1B, 0x47], // Selecionar modo de duplo traço
-      // [
-      //   0x1B,
-      //   0x4A,
-      //   0x04
-      // ], // Imprimir alimentação de papel no final usando unidades mínimas
-      // [0x1B, 0x4C], // Selecionar modo de página
-      // [0x1B, 0x4D, 0x00], // Selecionar fonte de caractere
-      // [0x1B, 0x52], // Selecionar conjunto de caracteres internacional
-      // [0x1B, 0x53], // Selecionar modo padrão
-      // [0x1B, 0x54], // Selecionar direção de impressão em modo de página
-      // [0x1B, 0x56, 0x42], // Definir/cancelar caractere rotacionado em 90 graus
-      // [0x1B, 0x57], // Definir área de impressão em modo de página
-      // [0x1B, 0x5C], // Definir posição relativa
-      // [0x1B, 0x61], // Alinhar posição
-      // [
-      //   0x1B,
-      //   0x63,
-      //   0x30
-      // ], // Selecionar sensor(es) de papel para emitir sinais de fim de papel
-      // [
-      //   0x1B,
-      //   0x63,
-      //   0x31
-      // ], // Selecionar sensor(es) de papel para parar a impressão
-      // [0x1B, 0x63, 0x35], // Ativar/desativar botões do painel
-      // [0x1B, 0x64, 0x01], // Imprimir e alimentar papel n linhas
-      // [0x1B, 0x70, 0x00, 0x50, 0x50], // Pulso geral
-      // [0x1B, 0x74, 0x00], // Selecionar tabela de código de caractere
-      // [
-      //   0x1B,
-      //   0x7B,
-      //   0x01
-      // ], // Definir/cancelar impressão de caractere de cabeça para baixo
-      // [0x1D, 0x28, 0x41, 0x02, 0x00, 0x00, 0x30], // Imprimir imagem de bit NV
-      // [0x1D, 0x28, 0x41, 0x02, 0x00, 0x00, 0x31], // Definir imagem de bit NV
-      // [0x1D, 0x21, 0x11], // Selecionar tamanho de caractere
-      // [
-      //   0x1D,
-      //   0x24,
-      //   0x80
-      // ], // Definir posição de impressão vertical absoluta em modo de página
-      // [0x1D, 0x2A, 0x00], // Definir imagem de bit transferida
-      // [0x1D, 0x2F, 0x00], // Imprimir imagem de bit transferida
-      // [0x1D, 0x3A, 0x52], // Iniciar/encerrar definição de macro
-      // [
-      //   0x1D,
-      //   0x42,
-      //   0x03
-      // ], // Ativar/desativar modo de impressão reversa preto/branco
-      // [0x1D, 0x48, 0x02], // Selecionar posição de impressão de caracteres HRI
-      // [0x1D, 0x49, 0x30], // Transmitir ID da impressora
-      // [0x1D, 0x4C, 0x10], // Definir margem esquerda
-      // [0x1D, 0x50, 0x02], // Definir unidades de movimento horizontal e vertical
-      // [0x1D, 0x56, 0x00], // Cortar papel
-      // [0x1D, 0x57, 0x80], // Definir largura da área de impressão
-      // [
-      //   0x1D,
-      //   0x5C,
-      //   0x00
-      // ], // Definir posição vertical relativa de impressão em modo de página
-      // [0x1D, 0x5E], // Executar macro
-      // [0x1D, 0x61], // Ativar/desativar Automatic Status Back (ASB)
-      // [0x1D, 0x61, 0x01], // Ativar/desativar modo de suavização
-      // [0x1D, 0x66, 0x01], // Selecionar fonte para caracteres HRI
-      // [0x1D, 0x68, 0x64], // Definir altura do código de barras
-      // [0x1D, 0x6B, 0x02, 0x49, 0x4E, 0x20], // Imprimir código de barras
-      // [0x1D, 0x72, 0x01], // Transmitir status
-      // [0x1D, 0x76, 0x00], // Imprimir imagem de bit raster
-      // [0x1D, 0x77, 0x01], // Definir largura do código de barras
-    ];
-
-    //{0x1D, 0X50, 0x00, 0x00}
-
-    // const testCommands = [
-    //   [0x1B, 0x40], // Initialize printer
-    //   [0x1B, 0x61, 0x01], // Centralize
-    //   [0x1B, 0x4D, 0x01], // Font B
-    //   [0x1D, 0x21, 0x11], // Double height and width
-    //   [0x1B, 0x45, 0x01], // Bold on
-    //   [0x1D, 0x42, 0x01], // Reverse on
-    //   [0x1B, 0x2D, 0x01], // Underline on
-    //   [0x1B, 0x21, 0x10], // Italic on
-    //   [0x1B, 0x56, 0x42], // Partial cut
-    //   [0x1D, 0x56, 0x42], // Print and feed paper
-    //   [0x1B, 0x69], // Full cut
-    //   [0x1B, 0x7B, 0x01], // Upside down on
-    //   [0x1B, 0x21, 0x20], // Double strike on
-    //   [0x1D, 0x42, 0x00], // Reverse off
-    //   [0x1B, 0x45, 0x00], // Bold off
-    //   [0x1B, 0x2D, 0x00], // Underline off
-    //   [0x1B, 0x21, 0x00], // Italic off
-    //   [0x1B, 0x21, 0x00], // Double strike off
-    //   [0x1B, 0x61, 0x00], // Left align
-    // ];
-
-    List<int> flatTestCommands =
-        escPosCommands.expand((command) => command).toList();
-
+    
     // Geração da imagem
-    final img.Image image = await createImageForPrinting();
-    List<int> imageData = generator.image(image);
+    final img.Image image = await loadImageFromAssets('assets/caixalogo.png');
+    List<int> bytes = generator.imageRaster(image);
 
-    print('flatTestCommands $flatTestCommands');
-
-    // Combinar comandos ESC/POS com dados da imagem
-    List<int> bytes = [...flatTestCommands, ...imageData];
+    print("bytes $bytes");
 
     try {
       if (!printer['isConnected']) {
@@ -399,7 +248,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
   Future<img.Image> createImageForPrinting() async {
     const double pixelRatio = 1.3; // Aumento da densidade de pixels 1.37
-    const int targetWidth = 560; // Largura padrão para impressoras de 80mm
+    const int targetWidth = 576; // Largura padrão para impressoras de 80mm
     const int targetHeight = 1500; // 3000 boleto
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
@@ -431,5 +280,23 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final pngBytes = byteData.buffer.asUint8List();
     return img
         .decodeImage(pngBytes)!; // Decodificando os bytes PNG para uma imagem
+  }
+
+  Future<img.Image> loadImageFromAssets(String assetPath) async {
+    // Carrega o ByteData do arquivo de assets
+    final ByteData data = await rootBundle.load(assetPath);
+    // Converte ByteData em Uint8List
+    final Uint8List uint8List = data.buffer.asUint8List();
+    // Decodifica Uint8List em uma imagem img.Image
+    final img.Image originalImage = img.decodeImage(uint8List)!;
+
+    const double scaleFactor = 0.8;
+    final img.Image resizedImage = img.copyResize(
+      originalImage,
+      width: (originalImage.width * scaleFactor).toInt(),
+      height: (originalImage.height * scaleFactor).toInt(),
+    );
+
+    return resizedImage;
   }
 }
