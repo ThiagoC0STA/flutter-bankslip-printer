@@ -113,7 +113,7 @@ class MainActivity : FlutterActivity() {
 
     private fun writeData(data: ByteArray, result: MethodChannel.Result) {
         try {
-            val chunkSize = 505 // Tamanho do chunk, pode ajustar conforme necessário
+            val chunkSize = 1000 // Tamanho do chunk, pode ajustar conforme necessário
             for (i in data.indices step chunkSize) {
                 val end = minOf(i + chunkSize, data.size)
                 outputStream?.write(data.copyOfRange(i, end))
