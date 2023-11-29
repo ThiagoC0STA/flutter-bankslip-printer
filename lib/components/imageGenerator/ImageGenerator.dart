@@ -16,12 +16,12 @@ class BankSlipPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: Colors.black,
-          fontFamily: "Montserrat",
-          fontWeight: FontWeight.w700,
-          fontSize: textsize,
-          letterSpacing: -0.7,
-        ),
+            color: Colors.black,
+            fontFamily: "Montserrat-Regular",
+            fontWeight: FontWeight.w800,
+            fontSize: textsize,
+            letterSpacing: -0.7,
+            wordSpacing: 5),
       ),
       textAlign: TextAlign.left,
       textDirection: TextDirection.ltr,
@@ -40,10 +40,10 @@ class BankSlipPainter extends CustomPainter {
     canvas.translate(0, 1850);
 
     Offset topLeft = Offset(offset.dx, offset.dy);
-    Offset topRight = Offset(size.width + offset.dx - 440, offset.dy);
+    Offset topRight = Offset(size.width + offset.dx - 15, offset.dy);
     Offset bottomLeft = Offset(offset.dx, size.height + offset.dy);
     Offset bottomRight =
-        Offset(size.width + offset.dx - 440, size.height + offset.dy);
+        Offset(size.width + offset.dx - 15, size.height + offset.dy);
 
     canvas.drawLine(topLeft, topRight, linePaint); // Linha superior
     canvas.drawLine(topRight, bottomRight, linePaint); // Linha direita
@@ -114,7 +114,7 @@ class BankSlipPainter extends CustomPainter {
       final barcodeImagePaint = Paint();
       final src = Rect.fromLTWH(0, 0, barcodeImage!.width.toDouble(),
           barcodeImage!.height.toDouble());
-      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 88, 800, 80);
+      final dst = Rect.fromLTWH(-halfWidth + 15, halfHeight - 88, 820, 80);
       canvas.drawImageRect(barcodeImage!, src, dst, barcodeImagePaint);
     }
 
@@ -407,10 +407,10 @@ class BankSlipPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double contentHeightBankSlip = 600;
     double horizontalSpacing = 20.0;
-    // Rect backgroundRect = Rect.fromLTWH(0, 0, size.width, size.height);
-    // Paint backgroundPaint = Paint()..color = Colors.white;
+    Rect backgroundRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    Paint backgroundPaint = Paint()..color = Colors.white;
 
-    // canvas.drawRect(backgroundRect, backgroundPaint);
+    canvas.drawRect(backgroundRect, backgroundPaint);
 
     _drawReceiptToSaler(
         canvas,

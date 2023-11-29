@@ -182,10 +182,10 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
   Future<void> printImageFromFlutter(BluetoothDevice printer) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm80, profile);
+    final generator = Generator(PaperSize.mm58, profile);
 
     // Geração da imagem
-    final img.Image image = await createImageForPrintingIOS();
+    final img.Image image = await createImageForPrinting();
     List<int> bytes = generator.image(image);
 
     try {
@@ -200,7 +200,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               in service.characteristics) {
             if (characteristic.properties.write) {
               const int maxChunkSize = 505;
-              const int chunkDelayMs = 15;
+              const int chunkDelayMs = 10;
 
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
@@ -233,8 +233,9 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final barcodeImage = img.Image(width, height);
 
     img.fill(barcodeImage, img.getColor(255, 255, 255));
-    drawBarcode(barcodeImage, bc.Barcode.itf(), data);
-    final png = img.encodePng(barcodeImage);
+    drawBarcode(barcodeImage, bc.Barcode.itf(), data,
+        width: width, height: height);
+    final png = img.encodeJpg(barcodeImage);
 
     final uint8list = Uint8List.fromList(png);
 
@@ -243,14 +244,17 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     return frameInfo.image;
   }
 
-  Future<img.Image> createImageForPrintingIOS() async {
-    const double pixelRatio = 1.3;
-    const int targetWidth = 1000;
-    const int targetHeight = 3000;
+  Future<img.Image> createImageForPrinting() async {
+    const double pixelRatio = 1.25;
+    const int targetWidth = 576; // 400
+    const int targetHeight = 2800;
+
+    const int targetWidthC = targetWidth * 2;
+    const int targetHeightC = targetHeight * 2;
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage(
-        "03397955400001035059023579026637184617780101", 100000,3000);
+        "03397955400001035059023579026637184617780101", 4000, 800);
 
     Uint8List bytes = data.buffer.asUint8List();
     ui.Codec codec = await ui.instantiateImageCodec(bytes);
@@ -281,7 +285,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
     // Convert to JPEG
     final jpgBytes = img.encodeJpg(resizedImg);
-    return img.decodeImage(pngBytes)!;
+    return img.decodePng(pngBytes)!;
   }
 
   Future<img.Image> createImageForPrintingAndroid() async {
@@ -291,7 +295,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage(
-        "03397955400001035059023579026637184617780101", 3500, 100);
+        "03397955400001035059023579026637184617780101", 3000, 100);
 
     Uint8List bytes = data.buffer.asUint8List();
     ui.Codec codec = await ui.instantiateImageCodec(bytes);
