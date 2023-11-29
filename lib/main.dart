@@ -162,11 +162,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final generator = Generator(PaperSize.mm80, profile, spaceBetweenRows: 0);
 
     // Geração da imagem
-    final img.Image image = await createImageForPrinting();
+    final img.Image image = await createImageForPrintingAndroid();
     List<int> bytes = generator.imageRaster(image);
-
-    print("bytes $bytes");
-
     try {
       if (!printer['isConnected']) {
         await platform.invokeMethod('connectToDeviceByAddress',
@@ -185,7 +182,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
 
   Future<void> printImageFromFlutter(BluetoothDevice printer) async {
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm80, profile);
+    final generator = Generator(PaperSize.mm58, profile);
 
     // Geração da imagem
     final img.Image image = await createImageForPrinting();
@@ -203,7 +200,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               in service.characteristics) {
             if (characteristic.properties.write) {
               const int maxChunkSize = 505;
-              const int chunkDelayMs = 17;
+              const int chunkDelayMs = 10;
 
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
@@ -232,12 +229,13 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     }
   }
 
-  Future<ui.Image> generateBarcodeImage(String data) async {
-    final barcodeImage = img.Image(3500, 100);
+  Future<ui.Image> generateBarcodeImage(String data, width, height) async {
+    final barcodeImage = img.Image(width, height);
 
     img.fill(barcodeImage, img.getColor(255, 255, 255));
-    drawBarcode(barcodeImage, bc.Barcode.itf(), data);
-    final png = img.encodePng(barcodeImage);
+    drawBarcode(barcodeImage, bc.Barcode.itf(), data,
+        width: width, height: height);
+    final png = img.encodeJpg(barcodeImage);
 
     final uint8list = Uint8List.fromList(png);
 
@@ -247,13 +245,57 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
   }
 
   Future<img.Image> createImageForPrinting() async {
-    const double pixelRatio = 1.35;
+    const double pixelRatio = 1.25;
+    const int targetWidth = 576; // 400
+    const int targetHeight = 2800;
+
+    const int targetWidthC = targetWidth * 2;
+    const int targetHeightC = targetHeight * 2;
+
+    ByteData data = await rootBundle.load('assets/caixalogo.png');
+    final ui.Image barcodeImage = await generateBarcodeImage(
+        "03397955400001035059023579026637184617780101", 4000, 800);
+
+    Uint8List bytes = data.buffer.asUint8List();
+    ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    ui.FrameInfo fi = await codec.getNextFrame();
+
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder,
+        Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()));
+
+    canvas.scale(pixelRatio, pixelRatio);
+
+    final bankSlipPainter = BankSlipPainter(fi.image, barcodeImage);
+    bankSlipPainter.paint(
+        canvas, Size(targetWidth.toDouble(), targetHeight.toDouble()));
+
+    final picture = recorder.endRecording();
+    final uiImage = await picture.toImage(targetWidth, targetHeight);
+
+    final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) {
+      throw Exception('Failed to convert image to PNG bytes.');
+    }
+    final pngBytes = byteData.buffer.asUint8List();
+
+    img.Image image = img.decodeImage(pngBytes)!;
+    img.Image resizedImg =
+        img.copyResize(image, width: targetWidth, height: targetHeight);
+
+    // Convert to JPEG
+    final jpgBytes = img.encodeJpg(resizedImg);
+    return img.decodePng(pngBytes)!;
+  }
+
+  Future<img.Image> createImageForPrintingAndroid() async {
+    const double pixelRatio = 1.25;
     const int targetWidth = 576;
     const int targetHeight = 3000;
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage(
-        "03397955400001035059023579026637184617780101");
+        "03397955400001035059023579026637184617780101", 3000, 100);
 
     Uint8List bytes = data.buffer.asUint8List();
     ui.Codec codec = await ui.instantiateImageCodec(bytes);
