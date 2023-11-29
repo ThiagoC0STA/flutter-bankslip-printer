@@ -162,11 +162,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final generator = Generator(PaperSize.mm80, profile, spaceBetweenRows: 0);
 
     // Geração da imagem
-    final img.Image image = await createImageForPrinting();
+    final img.Image image = await createImageForPrintingAndroid();
     List<int> bytes = generator.imageRaster(image);
-
-    print("bytes $bytes");
-
     try {
       if (!printer['isConnected']) {
         await platform.invokeMethod('connectToDeviceByAddress',
@@ -188,7 +185,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     final generator = Generator(PaperSize.mm80, profile);
 
     // Geração da imagem
-    final img.Image image = await createImageForPrinting();
+    final img.Image image = await createImageForPrintingIOS();
     List<int> bytes = generator.image(image);
 
     try {
@@ -203,7 +200,7 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
               in service.characteristics) {
             if (characteristic.properties.write) {
               const int maxChunkSize = 505;
-              const int chunkDelayMs = 17;
+              const int chunkDelayMs = 15;
 
               for (int i = 0; i < bytes.length; i += maxChunkSize) {
                 int end = (i + maxChunkSize > bytes.length)
@@ -232,8 +229,8 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     }
   }
 
-  Future<ui.Image> generateBarcodeImage(String data) async {
-    final barcodeImage = img.Image(3500, 100);
+  Future<ui.Image> generateBarcodeImage(String data, width, height) async {
+    final barcodeImage = img.Image(width, height);
 
     img.fill(barcodeImage, img.getColor(255, 255, 255));
     drawBarcode(barcodeImage, bc.Barcode.itf(), data);
@@ -246,14 +243,55 @@ class _BluetoothPrinterScreenState extends State<BluetoothPrinterScreen> {
     return frameInfo.image;
   }
 
-  Future<img.Image> createImageForPrinting() async {
+  Future<img.Image> createImageForPrintingIOS() async {
+    const double pixelRatio = 1.3;
+    const int targetWidth = 1000;
+    const int targetHeight = 3000;
+
+    ByteData data = await rootBundle.load('assets/caixalogo.png');
+    final ui.Image barcodeImage = await generateBarcodeImage(
+        "03397955400001035059023579026637184617780101", 100000,3000);
+
+    Uint8List bytes = data.buffer.asUint8List();
+    ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    ui.FrameInfo fi = await codec.getNextFrame();
+
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder,
+        Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()));
+
+    canvas.scale(pixelRatio, pixelRatio);
+
+    final bankSlipPainter = BankSlipPainter(fi.image, barcodeImage);
+    bankSlipPainter.paint(
+        canvas, Size(targetWidth.toDouble(), targetHeight.toDouble()));
+
+    final picture = recorder.endRecording();
+    final uiImage = await picture.toImage(targetWidth, targetHeight);
+
+    final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) {
+      throw Exception('Failed to convert image to PNG bytes.');
+    }
+    final pngBytes = byteData.buffer.asUint8List();
+
+    img.Image image = img.decodeImage(pngBytes)!;
+    img.Image resizedImg =
+        img.copyResize(image, width: targetWidth, height: targetHeight);
+
+    // Convert to JPEG
+    final jpgBytes = img.encodeJpg(resizedImg);
+    return img.decodeImage(pngBytes)!;
+  }
+
+  Future<img.Image> createImageForPrintingAndroid() async {
     const double pixelRatio = 1.25;
     const int targetWidth = 576;
     const int targetHeight = 3000;
 
     ByteData data = await rootBundle.load('assets/caixalogo.png');
     final ui.Image barcodeImage = await generateBarcodeImage(
-        "03397955400001035059023579026637184617780101");
+        "03397955400001035059023579026637184617780101", 3500, 100);
 
     Uint8List bytes = data.buffer.asUint8List();
     ui.Codec codec = await ui.instantiateImageCodec(bytes);

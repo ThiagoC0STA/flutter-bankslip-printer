@@ -407,10 +407,10 @@ class BankSlipPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double contentHeightBankSlip = 600;
     double horizontalSpacing = 20.0;
-    Rect backgroundRect = Rect.fromLTWH(0, 0, size.width, size.height);
-    Paint backgroundPaint = Paint()..color = Colors.white;
+    // Rect backgroundRect = Rect.fromLTWH(0, 0, size.width, size.height);
+    // Paint backgroundPaint = Paint()..color = Colors.white;
 
-    canvas.drawRect(backgroundRect, backgroundPaint);
+    // canvas.drawRect(backgroundRect, backgroundPaint);
 
     _drawReceiptToSaler(
         canvas,
